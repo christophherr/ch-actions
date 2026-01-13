@@ -19,8 +19,8 @@ Always pin external actions like this:
 
 ```
 actions/checkout@v6
-actions/setup-node@v4
-actions/cache@v4
+actions/setup-node@v6
+actions/cache@v6
 shivammathur/setup-php@v2
 ```
 

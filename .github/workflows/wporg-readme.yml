@@ -1,5 +1,9 @@
 name: Reusable WP.org Readme/Asset Update
 
+# Composer caching strategy:
+# - This workflow doesn't use Composer at all, so no Composer caching is needed here.
+# - Other workflows (build/release vs lint/test) document their Composer caching strategy separately.
+
 on:
   workflow_call:
     inputs:
@@ -14,11 +18,11 @@ on:
 
 jobs:
   update:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Update assets/readme on WP.org
         uses: 10up/action-wordpress-plugin-asset-update@stable

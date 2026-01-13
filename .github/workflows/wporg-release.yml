@@ -1,5 +1,10 @@
 name: Reusable WP.org Release & Deploy
 
+# Composer caching strategy:
+# - This is a release workflow, so we use the dynamic Composer cache directory (composer config cache-files-dir)
+#   with restore-keys, to keep builds clean while still getting good cache reuse.
+# - Lint/Test workflows use ~/.composer/cache instead (simpler, faster, no extra step).
+
 on:
   workflow_call:
     inputs:
@@ -10,7 +15,7 @@ on:
       node-version:
         required: false
         type: string
-        default: "18"
+        default: "24"
       slug:
         required: true
         type: string
@@ -22,11 +27,11 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # -----------------------------
       # PHP + Composer Setup + Cache
@@ -38,15 +43,19 @@ jobs:
           extensions: mysqli, xmlwriter
           tools: composer:v2
 
-      - name: Composer cache
+      - name: Composer cache dir
         id: composer-cache
         run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Cache Composer
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          key: composer-${{ runner.os }}-${{ inputs.php-version }}
+          restore-keys: |
+            composer-${{ runner.os }}-${{ inputs.php-version }}
+            composer-${{ runner.os }}
+            composer-
 
       - name: Install Composer dependencies
         run: composer install --no-dev --prefer-dist --no-progress --no-interaction
@@ -55,21 +64,29 @@ jobs:
       # Node + npm Cache
       # -----------------------------
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
 
       - name: Cache npm
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.npm
-          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: npm-${{ runner.os }}-${{ inputs.node-version }}
+          restore-keys: |
+            npm-${{ runner.os }}-${{ inputs.node-version }}
+            npm-${{ runner.os }}
+            npm-
 
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-${{ runner.os }}-${{ inputs.node-version }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-${{ inputs.node-version }}
+            node-modules-${{ runner.os }}
+            node-modules-
 
       - name: Install Node dependencies
         run: npm ci

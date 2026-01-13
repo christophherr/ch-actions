@@ -1,5 +1,11 @@
 name: Reusable Full Test Suite
 
+# Composer caching strategy:
+# - This is a test workflow, so we use ~/.composer/cache without restore-keys.
+#   It runs frequently and installs quickly, so fallback caching isn't critical.
+# - Build/Release workflows use the dynamic Composer cache directory with restore-keys
+#   for cleaner builds and better cache reuse.
+
 on:
   workflow_call:
     inputs:
@@ -14,7 +20,7 @@ on:
       node-version:
         required: false
         type: string
-        default: "18"
+        default: "24"
     secrets: {}
 
 # ---------------------------------------------------------
@@ -23,8 +29,8 @@ on:
 jobs:
   phpunit-unit:
     name: PHPUnit Unit Tests
-    runs-on: ubuntu-22.04
-    if: ${{ hashFiles('phpunit.unit.xml') }}
+    runs-on: ubuntu-24.04
+    if: ${{ exists('phpunit.unit.xml') }}
 
     steps:
       - name: Checkout
@@ -38,15 +44,11 @@ jobs:
           tools: composer:v2
           coverage: xdebug
 
-      - name: Composer cache dir
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
       - name: Cache Composer
         uses: actions/cache@v6
         with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          path: ~/.composer/cache
+          key: composer-${{ runner.os }}-${{ inputs.php-version }}
 
       - name: Install Composer deps
         run: composer install --no-progress --no-interaction
@@ -60,13 +62,13 @@ jobs:
           name: phpunit-unit-coverage
           path: coverage-unit.xml
 
-# ---------------------------------------------------------
-# 2) PHPUNIT INTEGRATION TESTS (runs only if phpunit.integration.xml exists)
-# ---------------------------------------------------------
+  # ---------------------------------------------------------
+  # 2) PHPUNIT INTEGRATION TESTS (runs only if phpunit.integration.xml exists)
+  # ---------------------------------------------------------
   phpunit-integration:
     name: PHPUnit Integration Tests
-    runs-on: ubuntu-22.04
-    if: ${{ hashFiles('phpunit.integration.xml') }}
+    runs-on: ubuntu-24.04
+    if: ${{ exists('phpunit.integration.xml') }}
 
     services:
       mysql:
@@ -84,7 +86,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup PHP (with Xdebug)
         uses: shivammathur/setup-php@v2
@@ -94,15 +96,11 @@ jobs:
           tools: composer:v2
           coverage: xdebug
 
-      - name: Composer cache dir
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
       - name: Cache Composer
         uses: actions/cache@v6
         with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          path: ~/.composer/cache
+          key: composer-${{ runner.os }}-${{ inputs.php-version }}
 
       - name: Install Composer deps
         run: composer install --no-progress --no-interaction
@@ -132,13 +130,13 @@ jobs:
           name: phpunit-integration-coverage
           path: coverage-integration.xml
 
-# ---------------------------------------------------------
-# 3) JS TESTS (runs only if package.json AND jest.config.js exist)
-# ---------------------------------------------------------
+  # ---------------------------------------------------------
+  # 3) JS TESTS (runs only if package.json AND jest.config.js exist)
+  # ---------------------------------------------------------
   js-tests:
     name: JavaScript Tests (Jest)
-    runs-on: ubuntu-22.04
-    if: ${{ hashFiles('package.json') && hashFiles('jest.config.js') }}
+    runs-on: ubuntu-24.04
+    if: ${{ exists('package.json') && exists('jest.config.js') }}
 
     steps:
       - name: Checkout
@@ -153,13 +151,13 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.npm
-          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: npm-${{ runner.os }}-${{ inputs.node-version }}
 
       - name: Cache node_modules
         uses: actions/cache@v6
         with:
           path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: node-modules-${{ runner.os }}-${{ inputs.node-version }}
 
       - name: Install Node deps
         run: npm ci
