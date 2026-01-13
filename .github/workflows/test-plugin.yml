@@ -149,7 +149,15 @@ jobs:
 
       - name: Install WordPress test suite (modern CI method)
         run: |
-          WP_VERSION="${{ inputs.wp-version }}"
+          # Resolve "latest" to an actual version number
+          if [ "${{ inputs.wp-version }}" = "latest" ]; then
+            WP_VERSION=$(curl -s https://api.wordpress.org/core/version-check/1.7/ | jq -r '.offers[0].version')
+          else
+            WP_VERSION="${{ inputs.wp-version }}"
+          fi
+
+          echo "Resolved WordPress version: $WP_VERSION"
+
           WP_DIR="/tmp/wordpress"
           WP_TESTS_DIR="/tmp/wordpress-tests-lib"
 
@@ -162,7 +170,6 @@ jobs:
           echo "Creating test database..."
           mysql -u root -proot -e "DROP DATABASE IF EXISTS wordpress_test;"
           mysql -u root -proot -e "CREATE DATABASE wordpress_test;"
-
       - name: Run PHPUnit (integration)
         run: vendor/bin/phpunit -c phpunit.integration.xml
 
