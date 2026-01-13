@@ -20,7 +20,7 @@ Always pin external actions like this:
 ```
 actions/checkout@v6
 actions/setup-node@v6
-actions/cache@v6
+actions/cache@v5
 shivammathur/setup-php@v2
 ```
 
