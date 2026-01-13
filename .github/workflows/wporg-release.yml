@@ -97,6 +97,13 @@ jobs:
       # -----------------------------
       # POT file
       # -----------------------------
+      - name: Install WP-CLI
+        run: |
+          curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+          php wp-cli.phar --info
+          chmod +x wp-cli.phar
+          sudo mv wp-cli.phar /usr/local/bin/wp
+
       - name: Generate POT file
         run: wp i18n make-pot . languages/${{ inputs.slug }}.pot
 
