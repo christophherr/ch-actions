@@ -99,7 +99,7 @@ jobs:
         run: vendor/bin/phpunit -c phpunit.unit.xml --coverage-text --coverage-clover=coverage-unit.xml
 
       - name: Upload coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: phpunit-unit-coverage
           path: coverage-unit.xml
@@ -217,7 +217,7 @@ jobs:
         run: npm test -- --ci --coverage
 
       - name: Upload JS coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: jest-coverage
           path: coverage
