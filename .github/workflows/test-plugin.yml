@@ -20,7 +20,7 @@ on:
       node-version:
         required: false
         type: string
-        default: "18"
+        default: "24"
     secrets: {}
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
   # FILE DETECTION JOB (required because exists() is NOT supported)
   # ---------------------------------------------------------
   detect-files:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       has_unit: ${{ steps.unit.outputs.exists }}
       has_integration: ${{ steps.integration.outputs.exists }}
@@ -47,10 +47,10 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Detect phpunit.integration.xml
+      - name: Detect phpunit.ci.xml
         id: integration
         run: |
-          if [ -f phpunit.integration.xml ]; then
+          if [ -f phpunit.ci.xml ]; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
@@ -72,7 +72,7 @@ jobs:
     name: PHPUnit Unit Tests
     needs: detect-files
     if: ${{ needs.detect-files.outputs.has_unit == 'true' }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
@@ -108,34 +108,30 @@ jobs:
   # 2) PHPUNIT INTEGRATION TESTS
   # ---------------------------------------------------------
   phpunit-integration:
-    name: PHPUnit Integration Tests
+    name: PHPUnit Integration Tests (wp-env)
     needs: detect-files
     if: ${{ needs.detect-files.outputs.has_integration == 'true' }}
-    runs-on: ubuntu-22.04
-
-    services:
-      mysql:
-        image: mysql:5.7
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: wordpress_test
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping --silent"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=10
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup PHP (with Xdebug)
+      # Node is required for @wordpress/env
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Install @wordpress/env
+        run: npm install -g @wordpress/env
+
+      # PHP is needed only for Composer on the host
+      - name: Setup PHP (for Composer)
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ inputs.php-version }}
-          extensions: mysql, mysqli
+          tools: composer:v2
           coverage: none
 
       - name: Cache Composer
@@ -147,39 +143,41 @@ jobs:
       - name: Install Composer deps
         run: composer install --no-progress --no-interaction
 
-      - name: Install WordPress test suite (modern CI method)
+      # Start wp-env with the correct WordPress version
+      - name: Start wp-env
         run: |
-          # Resolve "latest" to an actual version number
           if [ "${{ inputs.wp-version }}" = "latest" ]; then
-            WP_VERSION=$(curl -s https://api.wordpress.org/core/version-check/1.7/ | jq -r '.offers[0].version')
+            CORE_REF="WordPress/WordPress#master"
           else
-            WP_VERSION="${{ inputs.wp-version }}"
+            CORE_REF="WordPress/WordPress#${{ inputs.wp-version }}"
           fi
 
-          echo "Resolved WordPress version: $WP_VERSION"
+          echo "Using WP_ENV_CORE=${CORE_REF}"
+          export WP_ENV_CORE="${CORE_REF}"
 
-          WP_DIR="/tmp/wordpress"
-          WP_TESTS_DIR="/tmp/wordpress-tests-lib"
+          wp-env start
+        env:
+          CI: true
 
-          echo "Downloading WordPress $WP_VERSION..."
-          svn export --quiet https://develop.svn.wordpress.org/tags/$WP_VERSION/src $WP_DIR
+      # Run PHPUnit INSIDE the wp-env phpunit container
+      - name: Run PHPUnit (integration via wp-env)
+        run: |
+          if [ "${{ inputs.wp-version }}" = "latest" ]; then
+            CORE_REF="WordPress/WordPress#master"
+          else
+            CORE_REF="WordPress/WordPress#${{ inputs.wp-version }}"
+          fi
 
-          echo "Downloading WordPress test suite..."
-          svn export --quiet https://develop.svn.wordpress.org/tags/$WP_VERSION/tests/phpunit $WP_TESTS_DIR
+          export WP_ENV_CORE="${CORE_REF}"
 
-          echo "Creating test database..."
-          mysql -h 127.0.0.1 -P ${{ job.services.mysql.ports[3306] }} --protocol=tcp -u root -proot \
-            -e "DROP DATABASE IF EXISTS wordpress_test;"
-          mysql -h 127.0.0.1 -P ${{ job.services.mysql.ports[3306] }} --protocol=tcp -u root -proot \
-            -e "CREATE DATABASE wordpress_test;"
+          wp-env run phpunit "vendor/bin/phpunit -c phpunit.integration.ci.xml"
+        env:
+          CI: true
 
-          echo "Exporting environment variables..."
-          echo "WP_TESTS_DIR=$WP_TESTS_DIR" >> $GITHUB_ENV
-          echo "WP_CORE_DIR=$WP_DIR" >> $GITHUB_ENV
+      - name: Stop wp-env
+        if: always()
+        run: wp-env stop
 
-
-      - name: Run PHPUnit (integration)
-        run: vendor/bin/phpunit -c phpunit.integration.xml
 
   # ---------------------------------------------------------
   # 3) JS TESTS (Jest)
@@ -188,7 +186,7 @@ jobs:
     name: JavaScript Tests (Jest)
     needs: detect-files
     if: ${{ needs.detect-files.outputs.has_js == 'true' }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
