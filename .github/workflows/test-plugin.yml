@@ -20,21 +20,63 @@ on:
       node-version:
         required: false
         type: string
-        default: "24"
+        default: "18"
     secrets: {}
 
-# ---------------------------------------------------------
-# 1) PHPUNIT UNIT TESTS (runs only if phpunit.unit.xml exists)
-# ---------------------------------------------------------
 jobs:
+
+  # ---------------------------------------------------------
+  # FILE DETECTION JOB (required because exists() is NOT supported)
+  # ---------------------------------------------------------
+  detect-files:
+    runs-on: ubuntu-22.04
+    outputs:
+      has_unit: ${{ steps.unit.outputs.exists }}
+      has_integration: ${{ steps.integration.outputs.exists }}
+      has_js: ${{ steps.js.outputs.exists }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect phpunit.unit.xml
+        id: unit
+        run: |
+          if [ -f phpunit.unit.xml ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Detect phpunit.integration.xml
+        id: integration
+        run: |
+          if [ -f phpunit.integration.xml ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Detect JS test files
+        id: js
+        run: |
+          if [ -f package.json ] && [ -f jest.config.js ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ---------------------------------------------------------
+  # 1) PHPUNIT UNIT TESTS
+  # ---------------------------------------------------------
   phpunit-unit:
     name: PHPUnit Unit Tests
-    runs-on: ubuntu-24.04
-    if: ${{ exists('phpunit.unit.xml') }}
+    needs: detect-files
+    if: ${{ needs.detect-files.outputs.has_unit == 'true' }}
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup PHP (with Xdebug)
         uses: shivammathur/setup-php@v2
@@ -45,7 +87,7 @@ jobs:
           coverage: xdebug
 
       - name: Cache Composer
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: ~/.composer/cache
           key: composer-${{ runner.os }}-${{ inputs.php-version }}
@@ -57,18 +99,19 @@ jobs:
         run: vendor/bin/phpunit -c phpunit.unit.xml --coverage-text --coverage-clover=coverage-unit.xml
 
       - name: Upload coverage
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: phpunit-unit-coverage
           path: coverage-unit.xml
 
   # ---------------------------------------------------------
-  # 2) PHPUNIT INTEGRATION TESTS (runs only if phpunit.integration.xml exists)
+  # 2) PHPUNIT INTEGRATION TESTS
   # ---------------------------------------------------------
   phpunit-integration:
     name: PHPUnit Integration Tests
-    runs-on: ubuntu-24.04
-    if: ${{ exists('phpunit.integration.xml') }}
+    needs: detect-files
+    if: ${{ needs.detect-files.outputs.has_integration == 'true' }}
+    runs-on: ubuntu-22.04
 
     services:
       mysql:
@@ -86,7 +129,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup PHP (with Xdebug)
         uses: shivammathur/setup-php@v2
@@ -97,7 +140,7 @@ jobs:
           coverage: xdebug
 
       - name: Cache Composer
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: ~/.composer/cache
           key: composer-${{ runner.os }}-${{ inputs.php-version }}
@@ -106,7 +149,7 @@ jobs:
         run: composer install --no-progress --no-interaction
 
       - name: Cache WP test suite
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: /tmp/wordpress-tests-lib
           key: wp-tests-${{ inputs.wp-version }}
@@ -125,36 +168,37 @@ jobs:
         run: vendor/bin/phpunit -c phpunit.integration.xml --coverage-text --coverage-clover=coverage-integration.xml
 
       - name: Upload coverage
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: phpunit-integration-coverage
           path: coverage-integration.xml
 
   # ---------------------------------------------------------
-  # 3) JS TESTS (runs only if package.json AND jest.config.js exist)
+  # 3) JS TESTS (Jest)
   # ---------------------------------------------------------
   js-tests:
     name: JavaScript Tests (Jest)
-    runs-on: ubuntu-24.04
-    if: ${{ exists('package.json') && exists('jest.config.js') }}
+    needs: detect-files
+    if: ${{ needs.detect-files.outputs.has_js == 'true' }}
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
 
       - name: Cache npm
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: ~/.npm
           key: npm-${{ runner.os }}-${{ inputs.node-version }}
 
       - name: Cache node_modules
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-${{ inputs.node-version }}
@@ -166,7 +210,7 @@ jobs:
         run: npm test -- --ci --coverage
 
       - name: Upload JS coverage
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: jest-coverage
           path: coverage
