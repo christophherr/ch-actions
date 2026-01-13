@@ -125,7 +125,7 @@ jobs:
       # ZIP for release
       # -----------------------------
       - name: Create ZIP using distignore
-        run: zip -r ${{ inputs.slug }}-${{ env.VERSION }}.zip . -x@.distignore
+        run: zip -r ${{ inputs.slug }}-${{ env.VERSION }}.zip . -x@.zipignore
 
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1

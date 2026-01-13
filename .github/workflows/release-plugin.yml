@@ -106,7 +106,7 @@ jobs:
         run: echo "VERSION=$(node -p \"require('./package.json').version\")" >> $GITHUB_ENV
 
       - name: Create ZIP using distignore
-        run: zip -r ${{ github.event.repository.name }}-${{ env.VERSION }}.zip . -x@.distignore
+        run: zip -r ${{ github.event.repository.name }}-${{ env.VERSION }}.zip . -x@.zipignore
 
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1

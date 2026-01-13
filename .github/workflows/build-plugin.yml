@@ -98,10 +98,11 @@ jobs:
         run: wp i18n make-pot . languages/${{ github.event.repository.name }}.pot
 
       - name: Create ZIP using distignore
-        run: zip -r plugin.zip . -x@.distignore
+        run: zip -r plugin.zip . -x@.zipignore
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: plugin-build
-          path: plugin.zip
+          name: ${{ github.event.repository.name }}-build
+          path: ${{ github.event.repository.name }}.zip
+

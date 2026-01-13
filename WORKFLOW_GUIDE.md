@@ -8,7 +8,7 @@ This guide explains each reusable workflow in the `ch-actions` repository, what 
 
 ### Purpose
 
-Builds a plugin ZIP for testing or QA using `.distignore`.
+Builds a plugin ZIP for testing or QA using `.zipignore`.
 
 ### Includes
 
@@ -218,7 +218,7 @@ jobs:
 
 | File | Purpose |
 |------|---------|
-| `.distignore` | Required for build + release |
+| `.zipignore` | Required for build + release |
 | `phpunit.unit.xml` | Optional |
 | `phpunit.integration.xml` | Optional |
 | `jest.config.js` | Optional |
@@ -232,4 +232,4 @@ jobs:
 - Always reference reusable workflows via `@main`
 - Let Dependabot update external actions weekly
 - Never duplicate workflow logic in plugin repos
-- Use `.distignore` to control what goes into release ZIPs
+- Use `.zipignore` to control what goes into release ZIPs

@@ -40,7 +40,7 @@ All reusable workflows must live inside `.github/workflows/`.
 
 | Workflow | Description |
 |---------|-------------|
-| `build-plugin.yml` | Builds plugin ZIP using `.distignore` for testing or QA. |
+| `build-plugin.yml` | Builds plugin ZIP using `.zipignore` for testing or QA. |
 | `release-plugin.yml` | Builds, tags, creates GitHub release, deploys ZIP to WP.org. |
 | `wporg-release.yml` | WordPress.org release + deploy (standalone). |
 | `wporg-readme.yml` | Updates plugin readme + assets on WP.org. |
@@ -128,7 +128,7 @@ These workflows auto-detect tests based on file presence:
 | `phpunit.integration.xml` | Enables integration tests |
 | `jest.config.js` | Enables JS tests |
 | `package.json` | Enables npm + Jest |
-| `.distignore` | Required for build + release ZIPs |
+| `.zipignore` | Required for build + release ZIPs |
 
 If a file is missing, the corresponding job is skipped automatically.
 
