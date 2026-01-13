@@ -66,11 +66,9 @@ Full release pipeline:
 jobs:
   release:
     uses: honorswp/ch-actions/.github/workflows/release-plugin.yml@main
-    with:
-      slug: my-plugin
     secrets:
-      WP_ORG_USERNAME: ${{ secrets.WP_ORG_USERNAME }}
-      WP_ORG_PASSWORD: ${{ secrets.WP_ORG_PASSWORD }}
+      WP_UPLOADER_USERNAME: ${{ secrets.WP_UPLOADER_USERNAME }}
+      WP_UPLOADER_PASSWORD: ${{ secrets.WP_UPLOADER_PASSWORD }}
 ```
 
 ---
@@ -100,6 +98,10 @@ jobs:
     uses: honorswp/ch-actions/.github/workflows/wporg-release.yml@main
     with:
       slug: my-plugin
+    secrets:
+      WP_ORG_USERNAME: ${{ secrets.WP_ORG_USERNAME }}
+      WP_ORG_PASSWORD: ${{ secrets.WP_ORG_PASSWORD }}
+
 ```
 
 ---
@@ -128,6 +130,10 @@ jobs:
     uses: honorswp/ch-actions/.github/workflows/wporg-readme.yml@main
     with:
       slug: my-plugin
+    secrets:
+      WP_ORG_USERNAME: ${{ secrets.WP_ORG_USERNAME }}
+      WP_ORG_PASSWORD: ${{ secrets.WP_ORG_PASSWORD }}
+
 ```
 
 ---
