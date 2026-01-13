@@ -36,7 +36,7 @@ jobs:
       has_js: ${{ steps.js.outputs.exists }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Detect phpunit.unit.xml
         id: unit
@@ -76,7 +76,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup PHP (with Xdebug)
         uses: shivammathur/setup-php@v2
@@ -87,7 +87,7 @@ jobs:
           coverage: xdebug
 
       - name: Cache Composer
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.composer/cache
           key: composer-${{ runner.os }}-${{ inputs.php-version }}
@@ -129,18 +129,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup PHP (with Xdebug)
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ inputs.php-version }}
-          extensions: xdebug, mysqli
-          tools: composer:v2
-          coverage: xdebug
+          extensions: mysql, mysqli
+          coverage: none
 
       - name: Cache Composer
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.composer/cache
           key: composer-${{ runner.os }}-${{ inputs.php-version }}
@@ -148,13 +147,9 @@ jobs:
       - name: Install Composer deps
         run: composer install --no-progress --no-interaction
 
-      - name: Cache WP test suite
-        uses: actions/cache@v4
-        with:
-          path: /tmp/wordpress-tests-lib
-          key: wp-tests-${{ inputs.wp-version }}
-
       - name: Download WP test suite
+        env:
+          WP_TESTS_FORCE_REINSTALL: 1
         run: |
           if [ ! -d /tmp/wordpress-tests-lib ]; then
             bash <(curl -s https://raw.githubusercontent.com/wp-cli/scaffold-command/master/templates/install-wp-tests.sh) \
@@ -164,14 +159,8 @@ jobs:
             echo "WP test suite restored from cache"
           fi
 
-      - name: Run PHPUnit (integration) with coverage
-        run: vendor/bin/phpunit -c phpunit.integration.xml --coverage-text --coverage-clover=coverage-integration.xml
-
-      - name: Upload coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: phpunit-integration-coverage
-          path: coverage-integration.xml
+      - name: Run PHPUnit (integration)
+        run: vendor/bin/phpunit -c phpunit.integration.xml
 
   # ---------------------------------------------------------
   # 3) JS TESTS (Jest)
@@ -184,21 +173,21 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
 
       - name: Cache npm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.npm
           key: npm-${{ runner.os }}-${{ inputs.node-version }}
 
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-${{ inputs.node-version }}
