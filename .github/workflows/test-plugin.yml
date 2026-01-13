@@ -104,7 +104,7 @@ jobs:
           name: phpunit-unit-coverage
           path: coverage-unit.xml
 
-  # ---------------------------------------------------------
+    # ---------------------------------------------------------
   # 2) PHPUNIT INTEGRATION TESTS
   # ---------------------------------------------------------
   phpunit-integration:
@@ -147,16 +147,21 @@ jobs:
       - name: Install Composer deps
         run: composer install --no-progress --no-interaction
 
-      - name: Download WP test suite
+      - name: Install WordPress test suite (modern CI method)
         run: |
-          export WP_TESTS_FORCE_REINSTALL=1
-          if [ ! -d /tmp/wordpress-tests-lib ]; then
-            bash <(curl -s https://raw.githubusercontent.com/wp-cli/scaffold-command/master/templates/install-wp-tests.sh) \
-              wordpress_test root root 127.0.0.1:${{ job.services.mysql.ports[3306] }} \
-              ${{ inputs.wp-version }}
-          else
-            echo "WP test suite restored from cache"
-          fi
+          WP_VERSION="${{ inputs.wp-version }}"
+          WP_DIR="/tmp/wordpress"
+          WP_TESTS_DIR="/tmp/wordpress-tests-lib"
+
+          echo "Downloading WordPress $WP_VERSION..."
+          svn export --quiet https://develop.svn.wordpress.org/tags/$WP_VERSION/src $WP_DIR
+
+          echo "Downloading WordPress test suite..."
+          svn export --quiet https://develop.svn.wordpress.org/tags/$WP_VERSION/tests/phpunit $WP_TESTS_DIR
+
+          echo "Creating test database..."
+          mysql -u root -proot -e "DROP DATABASE IF EXISTS wordpress_test;"
+          mysql -u root -proot -e "CREATE DATABASE wordpress_test;"
 
       - name: Run PHPUnit (integration)
         run: vendor/bin/phpunit -c phpunit.integration.xml
