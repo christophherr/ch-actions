@@ -170,7 +170,7 @@ jobs:
 
           export WP_ENV_CORE="${CORE_REF}"
 
-          wp-env run tests-cli --env-cwd=wp-content/plugins/opcache-toolkit phpunit -c phpunit.ci.xml
+          wp-env run tests-cli --env-cwd=wp-content/plugins/opcache-toolkit vendor/bin/phpunit -c phpunit.ci.xml
         env:
           CI: true
 
