@@ -1,0 +1,29 @@
+name: Reusable WP.org Readme/Asset Update
+
+on:
+  workflow_call:
+    inputs:
+      slug:
+        required: true
+        type: string
+    secrets:
+      WP_ORG_USERNAME:
+        required: true
+      WP_ORG_PASSWORD:
+        required: true
+
+jobs:
+  update:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update assets/readme on WP.org
+        uses: 10up/action-wordpress-plugin-asset-update@stable
+        env:
+          SVN_USERNAME: ${{ secrets.WP_ORG_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.WP_ORG_PASSWORD }}
+          SLUG: ${{ inputs.slug }}
+          IGNORE_OTHER_FILES: true

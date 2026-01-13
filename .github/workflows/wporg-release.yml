@@ -1,0 +1,121 @@
+name: Reusable WP.org Release & Deploy
+
+on:
+  workflow_call:
+    inputs:
+      php-version:
+        required: false
+        type: string
+        default: "7.4"
+      node-version:
+        required: false
+        type: string
+        default: "18"
+      slug:
+        required: true
+        type: string
+    secrets:
+      WP_ORG_USERNAME:
+        required: true
+      WP_ORG_PASSWORD:
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # -----------------------------
+      # PHP + Composer Setup + Cache
+      # -----------------------------
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: mysqli, xmlwriter
+          tools: composer:v2
+
+      - name: Composer cache
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --prefer-dist --no-progress --no-interaction
+
+      # -----------------------------
+      # Node + npm Cache
+      # -----------------------------
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build assets
+        run: npm run build
+
+      # -----------------------------
+      # POT file
+      # -----------------------------
+      - name: Generate POT file
+        run: wp i18n make-pot . languages/${{ inputs.slug }}.pot
+
+      # -----------------------------
+      # Version + Tag
+      # -----------------------------
+      - name: Read version
+        id: version
+        run: echo "VERSION=$(node -p \"require('./package.json').version\")" >> $GITHUB_ENV
+
+      - name: Create Git tag
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+      # -----------------------------
+      # ZIP for release
+      # -----------------------------
+      - name: Create ZIP using distignore
+        run: zip -r ${{ inputs.slug }}-${{ env.VERSION }}.zip . -x@.distignore
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "${{ inputs.slug }}-${{ env.VERSION }}.zip"
+          tag: "${{ env.VERSION }}"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # -----------------------------
+      # Deploy to WP.org
+      # -----------------------------
+      - name: Deploy to WordPress.org
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SVN_USERNAME: ${{ secrets.WP_ORG_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.WP_ORG_PASSWORD }}
+          SLUG: ${{ inputs.slug }}

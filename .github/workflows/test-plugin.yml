@@ -1,0 +1,174 @@
+name: Reusable Full Test Suite
+
+on:
+  workflow_call:
+    inputs:
+      php-version:
+        required: false
+        type: string
+        default: "7.4"
+      wp-version:
+        required: false
+        type: string
+        default: "latest"
+      node-version:
+        required: false
+        type: string
+        default: "18"
+    secrets: {}
+
+# ---------------------------------------------------------
+# 1) PHPUNIT UNIT TESTS (runs only if phpunit.unit.xml exists)
+# ---------------------------------------------------------
+jobs:
+  phpunit-unit:
+    name: PHPUnit Unit Tests
+    runs-on: ubuntu-22.04
+    if: ${{ hashFiles('phpunit.unit.xml') }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup PHP (with Xdebug)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: xdebug, mysqli
+          tools: composer:v2
+          coverage: xdebug
+
+      - name: Composer cache dir
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+
+      - name: Install Composer deps
+        run: composer install --no-progress --no-interaction
+
+      - name: Run PHPUnit (unit) with coverage
+        run: vendor/bin/phpunit -c phpunit.unit.xml --coverage-text --coverage-clover=coverage-unit.xml
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v6
+        with:
+          name: phpunit-unit-coverage
+          path: coverage-unit.xml
+
+# ---------------------------------------------------------
+# 2) PHPUNIT INTEGRATION TESTS (runs only if phpunit.integration.xml exists)
+# ---------------------------------------------------------
+  phpunit-integration:
+    name: PHPUnit Integration Tests
+    runs-on: ubuntu-22.04
+    if: ${{ hashFiles('phpunit.integration.xml') }}
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP (with Xdebug)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.php-version }}
+          extensions: xdebug, mysqli
+          tools: composer:v2
+          coverage: xdebug
+
+      - name: Composer cache dir
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+
+      - name: Install Composer deps
+        run: composer install --no-progress --no-interaction
+
+      - name: Cache WP test suite
+        uses: actions/cache@v6
+        with:
+          path: /tmp/wordpress-tests-lib
+          key: wp-tests-${{ inputs.wp-version }}
+
+      - name: Download WP test suite
+        run: |
+          if [ ! -d /tmp/wordpress-tests-lib ]; then
+            bash <(curl -s https://raw.githubusercontent.com/wp-cli/scaffold-command/master/templates/install-wp-tests.sh) \
+              wordpress_test root root 127.0.0.1:${{ job.services.mysql.ports[3306] }} \
+              ${{ inputs.wp-version }}
+          else
+            echo "WP test suite restored from cache"
+          fi
+
+      - name: Run PHPUnit (integration) with coverage
+        run: vendor/bin/phpunit -c phpunit.integration.xml --coverage-text --coverage-clover=coverage-integration.xml
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v6
+        with:
+          name: phpunit-integration-coverage
+          path: coverage-integration.xml
+
+# ---------------------------------------------------------
+# 3) JS TESTS (runs only if package.json AND jest.config.js exist)
+# ---------------------------------------------------------
+  js-tests:
+    name: JavaScript Tests (Jest)
+    runs-on: ubuntu-22.04
+    if: ${{ hashFiles('package.json') && hashFiles('jest.config.js') }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Cache npm
+        uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Cache node_modules
+        uses: actions/cache@v6
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Node deps
+        run: npm ci
+
+      - name: Run Jest tests with coverage
+        run: npm test -- --ci --coverage
+
+      - name: Upload JS coverage
+        uses: actions/upload-artifact@v6
+        with:
+          name: jest-coverage
+          path: coverage
