@@ -148,9 +148,8 @@ jobs:
         run: composer install --no-progress --no-interaction
 
       - name: Download WP test suite
-        env:
-          WP_TESTS_FORCE_REINSTALL: 1
         run: |
+          export WP_TESTS_FORCE_REINSTALL=1
           if [ ! -d /tmp/wordpress-tests-lib ]; then
             bash <(curl -s https://raw.githubusercontent.com/wp-cli/scaffold-command/master/templates/install-wp-tests.sh) \
               wordpress_test root root 127.0.0.1:${{ job.services.mysql.ports[3306] }} \
