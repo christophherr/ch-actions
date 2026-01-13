@@ -168,8 +168,12 @@ jobs:
           svn export --quiet https://develop.svn.wordpress.org/tags/$WP_VERSION/tests/phpunit $WP_TESTS_DIR
 
           echo "Creating test database..."
-          mysql -u root -proot -e "DROP DATABASE IF EXISTS wordpress_test;"
-          mysql -u root -proot -e "CREATE DATABASE wordpress_test;"
+          mysql -h 127.0.0.1 -P ${{ job.services.mysql.ports[3306] }} --protocol=tcp -u root -proot \
+            -e "DROP DATABASE IF EXISTS wordpress_test;"
+
+          mysql -h 127.0.0.1 -P ${{ job.services.mysql.ports[3306] }} --protocol=tcp -u root -proot \
+            -e "CREATE DATABASE wordpress_test;"
+
       - name: Run PHPUnit (integration)
         run: vendor/bin/phpunit -c phpunit.integration.xml
 
