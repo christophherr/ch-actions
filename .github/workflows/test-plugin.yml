@@ -21,6 +21,9 @@ on:
         required: false
         type: string
         default: "24"
+      plugin-slug:
+        required: true
+        type: string
     secrets: {}
 
 jobs:
@@ -170,7 +173,7 @@ jobs:
 
           export WP_ENV_CORE="${CORE_REF}"
 
-          wp-env run tests-cli --env-cwd=wp-content/plugins/opcache-toolkit /bin/bash -c "vendor/bin/phpunit -c phpunit.ci.xml"
+          wp-env run tests-cli --env-cwd=wp-content/plugins/${{ inputs.plugin-slug }} /bin/bash -c "vendor/bin/phpunit -c phpunit.ci.xml"
 
         env:
           CI: true
