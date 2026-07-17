@@ -1,0 +1,20 @@
+name: Test Plugin Example
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  tests:
+    uses: christophherr/ch-actions/.github/workflows/test-plugin.yml@main
+    with:
+      slug: 'my-awesome-plugin'
+      php-version: "8.1"
+      wp-version: "6.5"
+      node-version: "20"
+      skip-unit: false
+      skip-integration: false
+      skip-js: false

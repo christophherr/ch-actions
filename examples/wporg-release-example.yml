@@ -1,0 +1,18 @@
+name: WordPress.org Release Example
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  wporg-release:
+    uses: christophherr/ch-actions/.github/workflows/wporg-release.yml@main
+    with:
+      slug: 'my-awesome-plugin'
+      php-version: "8.0"
+      node-version: "20"
+      skip-build: true
+    secrets:
+      WP_ORG_USERNAME: ${{ secrets.WP_ORG_USERNAME }}
+      WP_ORG_PASSWORD: ${{ secrets.WP_ORG_PASSWORD }}

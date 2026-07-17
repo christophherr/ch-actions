@@ -1,0 +1,17 @@
+name: Release Plugin Example
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  release:
+    uses: christophherr/ch-actions/.github/workflows/release-plugin.yml@main
+    with:
+      php-version: "8.1"
+      node-version: "20"
+      skip-build: false
+    secrets:
+      WP_UPLOADER_USERNAME: ${{ secrets.WP_UPLOADER_USERNAME }}
+      WP_UPLOADER_PASSWORD: ${{ secrets.WP_UPLOADER_PASSWORD }}

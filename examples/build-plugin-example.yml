@@ -1,0 +1,15 @@
+name: Build Plugin Example
+
+on:
+  push:
+    branches:
+      - testing
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: christophherr/ch-actions/.github/workflows/build-plugin.yml@main
+    with:
+      php-version: "8.2"
+      node-version: "20"
+      skip-build: false # Set to true if you don't need npm install/build

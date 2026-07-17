@@ -1,0 +1,19 @@
+name: WordPress.org Readme Update Example
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'readme.txt'
+      - 'assets/**'
+
+jobs:
+  readme:
+    uses: christophherr/ch-actions/.github/workflows/wporg-readme.yml@main
+    with:
+      slug: 'my-awesome-plugin'
+      ignore-other-files: true
+    secrets:
+      WP_ORG_USERNAME: ${{ secrets.WP_ORG_USERNAME }}
+      WP_ORG_PASSWORD: ${{ secrets.WP_ORG_PASSWORD }}
