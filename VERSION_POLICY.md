@@ -37,7 +37,7 @@ Why:
 Always reference reusable workflows like this:
 
 ```
-uses: honorswp/ch-actions/.github/workflows/test-plugin.yml@main
+uses: easilyi-amused/ea-actions/.github/workflows/test-plugin.yml@main
 ```
 
 Why:

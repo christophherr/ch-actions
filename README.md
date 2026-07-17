@@ -1,4 +1,4 @@
-# ch-actions
+# ea-actions
 
 Centralized, reusable GitHub Actions workflows for all plugin repositories.
 
@@ -18,7 +18,9 @@ By centralizing CI logic here, all plugin repositories stay clean, consistent, a
 ## 📁 Repository Structure
 
 ```
-ch-actions/
+ea-actions/
+  .gitattributes
+  .gitignore
   README.md
   VERSION_POLICY.md
   WORKFLOW_GUIDE.md
@@ -30,6 +32,14 @@ ch-actions/
       wporg-readme.yml
       test-plugin.yml
       lint-plugin.yml
+  examples/
+    ZIPIGNORE_EXAMPLE.txt
+    build-plugin-example.yml
+    lint-plugin-example.yml
+    release-plugin-example.yml
+    test-plugin-example.yml
+    wporg-readme-example.yml
+    wporg-release-example.yml
 ```
 
 All reusable workflows must live inside `.github/workflows/`.
@@ -67,7 +77,7 @@ on:
 
 jobs:
   build:
-    uses: christophherr/ch-actions/.github/workflows/build-plugin.yml@main
+    uses: easilyi-amused/ea-actions/.github/workflows/build-plugin.yml@main
 ```
 
 ### Example: Release workflow
@@ -82,7 +92,7 @@ jobs:
  
  jobs:
    release:
-     uses: christophherr/ch-actions/.github/workflows/release-plugin.yml@main
+     uses: easilyi-amused/ea-actions/.github/workflows/release-plugin.yml@main
      secrets:
        WP_UPLOADER_USERNAME: ${{ secrets.WP_UPLOADER_USERNAME }}
        WP_UPLOADER_PASSWORD: ${{ secrets.WP_UPLOADER_PASSWORD }}
@@ -103,7 +113,7 @@ on:
 
 jobs:
   tests:
-    uses: christophherr/ch-actions/.github/workflows/test-plugin.yml@main
+    uses: easilyi-amused/ea-actions/.github/workflows/test-plugin.yml@main
 ```
 
 ---
