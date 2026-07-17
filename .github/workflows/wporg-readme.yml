@@ -10,6 +10,11 @@ on:
       slug:
         required: true
         type: string
+      ignore-other-files:
+        description: "Passed to 10up/action-wordpress-plugin-asset-update"
+        required: false
+        type: boolean
+        default: true
     secrets:
       WP_ORG_USERNAME:
         required: true
@@ -30,4 +35,4 @@ jobs:
           SVN_USERNAME: ${{ secrets.WP_ORG_USERNAME }}
           SVN_PASSWORD: ${{ secrets.WP_ORG_PASSWORD }}
           SLUG: ${{ inputs.slug }}
-          IGNORE_OTHER_FILES: true
+          IGNORE_OTHER_FILES: ${{ inputs.ignore-other-files }}

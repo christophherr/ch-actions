@@ -16,6 +16,11 @@ on:
         required: false
         type: string
         default: "24"
+      skip-build:
+        description: "Skip npm install and npm run build"
+        required: false
+        type: boolean
+        default: false
     secrets:
       WP_UPLOADER_USERNAME:
         required: true
@@ -55,17 +60,19 @@ jobs:
             composer-
 
       - name: Install Composer dependencies
-        run: composer install --no-dev --prefer-dist --no-progress --no-interaction
+        run: composer install --no-dev --prefer-dist --no-progress --no-interaction --optimize-autoloader
 
       # -----------------------------
       # Node + npm Cache
       # -----------------------------
       - name: Setup Node
+        if: inputs.skip-build == false
         uses: actions/setup-node@v6
         with:
           node-version: ${{ inputs.node-version }}
 
       - name: Cache npm
+        if: inputs.skip-build == false
         uses: actions/cache@v5
         with:
           path: ~/.npm
@@ -76,6 +83,7 @@ jobs:
             npm-
 
       - name: Cache node_modules
+        if: inputs.skip-build == false
         uses: actions/cache@v5
         with:
           path: node_modules
@@ -86,9 +94,11 @@ jobs:
             node-modules-
 
       - name: Install Node dependencies
+        if: inputs.skip-build == false
         run: npm ci
 
       - name: Build assets
+        if: inputs.skip-build == false
         run: npm run build
 
       - name: Install WP-CLI

@@ -9,6 +9,10 @@ name: Reusable Full Test Suite
 on:
   workflow_call:
     inputs:
+      slug:
+        description: "Plugin slug (required for integration tests)"
+        required: true
+        type: string
       php-version:
         required: false
         type: string
@@ -21,9 +25,21 @@ on:
         required: false
         type: string
         default: "24"
-      plugin-slug:
-        required: true
-        type: string
+      skip-unit:
+        description: "Skip PHPUnit unit tests"
+        required: false
+        type: boolean
+        default: false
+      skip-integration:
+        description: "Skip PHPUnit integration tests"
+        required: false
+        type: boolean
+        default: false
+      skip-js:
+        description: "Skip Jest tests"
+        required: false
+        type: boolean
+        default: false
     secrets: {}
 
 jobs:
@@ -62,7 +78,7 @@ jobs:
       - name: Detect JS test files
         id: js
         run: |
-          if [ -f package.json ] && [ -f jest.config.js ]; then
+          if [ -f package.json ] && ([ -f jest.config.js ] || [ -f jest.config.cjs ] || [ -f jest.config.mjs ] || [ -f jest.config.ts ]); then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
@@ -74,7 +90,7 @@ jobs:
   phpunit-unit:
     name: PHPUnit Unit Tests
     needs: detect-files
-    if: ${{ needs.detect-files.outputs.has_unit == 'true' }}
+    if: ${{ needs.detect-files.outputs.has_unit == 'true' && inputs.skip-unit == false }}
     runs-on: ubuntu-24.04
 
     steps:
@@ -113,7 +129,7 @@ jobs:
   phpunit-integration:
     name: PHPUnit Integration Tests (wp-env)
     needs: detect-files
-    if: ${{ needs.detect-files.outputs.has_integration == 'true' }}
+    if: ${{ needs.detect-files.outputs.has_integration == 'true' && inputs.skip-integration == false }}
     runs-on: ubuntu-24.04
 
     steps:
@@ -152,7 +168,12 @@ jobs:
           if [ "${{ inputs.wp-version }}" = "latest" ]; then
             CORE_REF="WordPress/WordPress#master"
           else
-            CORE_REF="WordPress/WordPress#${{ inputs.wp-version }}"
+            # Support both "6.5" and "6.5.0"
+            if [[ "${{ inputs.wp-version }}" =~ ^[0-9]+\.[0-9]+$ ]]; then
+               CORE_REF="WordPress/WordPress#${{ inputs.wp-version }}"
+            else
+               CORE_REF="WordPress/WordPress#${{ inputs.wp-version }}"
+            fi
           fi
 
           echo "Using WP_ENV_CORE=${CORE_REF}"
@@ -170,11 +191,10 @@ jobs:
           else
             CORE_REF="WordPress/WordPress#${{ inputs.wp-version }}"
           fi
-
+          
           export WP_ENV_CORE="${CORE_REF}"
-
-          wp-env run tests-cli --env-cwd=wp-content/plugins/${{ inputs.plugin-slug }} /bin/bash -c "vendor/bin/phpunit -c phpunit.ci.xml"
-
+          
+          wp-env run tests-cli --env-cwd=wp-content/plugins/${{ inputs.slug }} /bin/bash -c "vendor/bin/phpunit -c phpunit.ci.xml"
         env:
           CI: true
 
@@ -189,7 +209,7 @@ jobs:
   js-tests:
     name: JavaScript Tests (Jest)
     needs: detect-files
-    if: ${{ needs.detect-files.outputs.has_js == 'true' }}
+    if: ${{ needs.detect-files.outputs.has_js == 'true' && inputs.skip-js == false }}
     runs-on: ubuntu-24.04
 
     steps:

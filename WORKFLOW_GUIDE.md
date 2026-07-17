@@ -20,7 +20,11 @@ Builds a plugin ZIP for testing or QA using `.zipignore`.
 
 ### Inputs
 
-None
+| Name | Description | Default |
+|------|-------------|---------|
+| `php-version` | PHP version | `7.4` |
+| `node-version` | Node version | `24` |
+| `skip-build` | Skip npm/build step | `false` |
 
 ### Secrets
 
@@ -32,6 +36,8 @@ None
 jobs:
   build:
     uses: honorswp/ch-actions/.github/workflows/build-plugin.yml@main
+    with:
+      skip-build: true # Optional: skips npm install and npm run build
 ```
 
 ---
@@ -49,27 +55,29 @@ Full release pipeline:
 
 ### Inputs
 
-| Name | Description |
-|------|-------------|
-| `slug` | WP.org plugin slug |
+| Name | Description | Default |
+|------|-------------|---------|
+| `php-version` | PHP version | `7.4` |
+| `node-version` | Node version | `24` |
+| `skip-build` | Skip npm/build step | `false` |
 
 ### Secrets
 
 | Secret | Purpose |
 |--------|---------|
-| `WP_ORG_USERNAME` | WP.org deploy username |
-| `WP_ORG_PASSWORD` | WP.org deploy password |
+| `WP_UPLOADER_USERNAME` | Internal site upload username |
+| `WP_UPLOADER_PASSWORD` | Internal site upload password |
 
 ### Usage (child repo)
-
-```yaml
-jobs:
-  release:
-    uses: honorswp/ch-actions/.github/workflows/release-plugin.yml@main
-    secrets:
-      WP_UPLOADER_USERNAME: ${{ secrets.WP_UPLOADER_USERNAME }}
-      WP_UPLOADER_PASSWORD: ${{ secrets.WP_UPLOADER_PASSWORD }}
-```
+ 
+ ```yaml
+ jobs:
+   release:
+     uses: honorswp/ch-actions/.github/workflows/release-plugin.yml@main
+     secrets:
+       WP_UPLOADER_USERNAME: ${{ secrets.WP_UPLOADER_USERNAME }}
+       WP_UPLOADER_PASSWORD: ${{ secrets.WP_UPLOADER_PASSWORD }}
+ ```
 
 ---
 
@@ -82,9 +90,12 @@ Useful when you want to deploy without building a GitHub Release.
 
 ### Inputs
 
-| Name | Description |
-|------|-------------|
-| `slug` | WP.org plugin slug |
+| Name | Description | Default |
+|------|-------------|---------|
+| `slug` | WP.org plugin slug | (required) |
+| `php-version` | PHP version | `7.4` |
+| `node-version` | Node version | `24` |
+| `skip-build` | Skip npm/build step | `false` |
 
 ### Secrets
 
@@ -114,9 +125,10 @@ Updates plugin readme + assets on WP.org (no build, no release).
 
 ### Inputs
 
-| Name | Description |
-|------|-------------|
-| `slug` | WP.org plugin slug |
+| Name | Description | Default |
+|------|-------------|---------|
+| `slug` | WP.org plugin slug | (required) |
+| `ignore-other-files` | Only update assets/readme | `true` |
 
 ### Secrets
 
@@ -149,14 +161,14 @@ Runs the full test suite:
 - Jest JS tests
 
 ### Auto‑detection
-
-Jobs only run if the plugin repo contains:
-
-| File | Enables |
-|------|---------|
-| `phpunit.unit.xml` | Unit tests |
-| `phpunit.integration.xml` | Integration tests |
-| `jest.config.js` + `package.json` | JS tests |
+ 
+ Jobs only run if the plugin repo contains:
+ 
+ | File | Enables |
+ |------|---------|
+ | `phpunit.unit.xml` | Unit tests |
+ | `phpunit.ci.xml` | Integration tests |
+ | `jest.config.js` + `package.json` | JS tests |
 
 If a file is missing, the corresponding job is skipped automatically.
 
@@ -170,7 +182,15 @@ If a file is missing, the corresponding job is skipped automatically.
 
 ### Inputs
 
-None
+| Name | Description | Default |
+|------|-------------|---------|
+| `slug` | Plugin slug | (required) |
+| `php-version` | PHP version | `7.4` |
+| `wp-version` | WordPress version | `latest` |
+| `node-version` | Node version | `24` |
+| `skip-unit` | Skip PHPUnit unit tests | `false` |
+| `skip-integration` | Skip PHPUnit integration tests | `false` |
+| `skip-js` | Skip Jest tests | `false` |
 
 ### Secrets
 
@@ -182,6 +202,9 @@ None
 jobs:
   tests:
     uses: honorswp/ch-actions/.github/workflows/test-plugin.yml@main
+    with:
+      slug: my-plugin
+      wp-version: "6.5"
 ```
 
 ---
@@ -198,7 +221,13 @@ Runs:
 
 ### Inputs
 
-None
+| Name | Description | Default |
+|------|-------------|---------|
+| `php-version` | PHP version | `7.4` |
+| `node-version` | Node version | `24` |
+| `skip-php-lint` | Skip PHPCS | `false` |
+| `skip-js-lint` | Skip ESLint | `false` |
+| `phpcs-standard` | PHPCS standard file | `phpcs.xml` |
 
 ### Secrets
 
@@ -210,19 +239,21 @@ None
 jobs:
   lint:
     uses: honorswp/ch-actions/.github/workflows/lint-plugin.yml@main
+    with:
+      skip-js-lint: true
 ```
 
 ---
 
 ## 🧩 Required Files in Plugin Repos
-
-| File | Purpose |
-|------|---------|
-| `.zipignore` | Required for build + release |
-| `phpunit.unit.xml` | Optional |
-| `phpunit.integration.xml` | Optional |
-| `jest.config.js` | Optional |
-| `package.json` | Optional |
+ 
+ | File | Purpose |
+ |------|---------|
+ | `.zipignore` | Required for build + release |
+ | `phpunit.unit.xml` | Optional |
+ | `phpunit.ci.xml` | Optional |
+ | `jest.config.js` | Optional |
+ | `package.json` | Optional |
 
 ---
 
@@ -233,3 +264,33 @@ jobs:
 - Let Dependabot update external actions weekly
 - Never duplicate workflow logic in plugin repos
 - Use `.zipignore` to control what goes into release ZIPs
+
+---
+
+## 📁 .zipignore Format
+
+The `build-plugin.yml` and `release-plugin.yml` workflows use the `zip -x@.zipignore` command to exclude files from the final archive. 
+
+### Format Rules:
+1. **One pattern per line.**
+2. **Standard glob patterns** are supported (e.g., `*.log`, `temp/*`).
+3. **Directory exclusion:** To exclude a directory and all its contents, use `dir_name/*`.
+4. **Recursive matching:** Patterns usually match relative to the root of the ZIP.
+5. **No special keywords:** Unlike `.gitattributes`, do NOT include `export-ignore`. Only the path/pattern itself.
+
+### Moving from .gitattributes to .zipignore
+
+If you have a `.gitattributes` file like this:
+```
+.github export-ignore
+node_modules export-ignore
+.gitignore export-ignore
+```
+
+Your `.zipignore` file should look like this:
+```
+.github/*
+node_modules/*
+.gitignore
+```
+*Note: Using `/*` ensures all contents of the directory are excluded.*

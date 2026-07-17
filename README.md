@@ -71,22 +71,22 @@ jobs:
 ```
 
 ### Example: Release workflow
-
-```yaml
-name: Release Plugin
-
-on:
-  push:
-    branches:
-      - release
-
-jobs:
-  release:
-    uses: christophherr/ch-actions/.github/workflows/release-plugin.yml@main
-    secrets:
-      WP_UPLOADER_USERNAME: ${{ secrets.WP_UPLOADER_USERNAME }}
-      WP_UPLOADER_PASSWORD: ${{ secrets.WP_UPLOADER_PASSWORD }}
-```
+ 
+ ```yaml
+ name: Release Plugin
+ 
+ on:
+   push:
+     branches:
+       - release
+ 
+ jobs:
+   release:
+     uses: christophherr/ch-actions/.github/workflows/release-plugin.yml@main
+     secrets:
+       WP_UPLOADER_USERNAME: ${{ secrets.WP_UPLOADER_USERNAME }}
+       WP_UPLOADER_PASSWORD: ${{ secrets.WP_UPLOADER_PASSWORD }}
+ ```
 
 ### Example: Test workflow
 
@@ -112,9 +112,24 @@ jobs:
 
 | Secret | Purpose |
 |--------|---------|
-| `WP_ORG_USERNAME` | WordPress.org username for deploys |
-| `WP_ORG_PASSWORD` | WordPress.org password for deploys |
+| `WP_ORG_USERNAME` | WordPress.org username for SVN deploys |
+| `WP_ORG_PASSWORD` | WordPress.org password for SVN deploys |
+| `WP_UPLOADER_USERNAME` | Username for internal site ZIP uploads |
+| `WP_UPLOADER_PASSWORD` | Password for internal site ZIP uploads |
 | `GITHUB_TOKEN` | Provided automatically by GitHub |
+
+### 🧭 Workflow Configuration
+
+All workflows share common inputs where applicable:
+
+| Name | Description | Default |
+|------|-------------|---------|
+| `php-version` | PHP version | `7.4` |
+| `node-version` | Node version | `24` |
+| `skip-build` | Skip npm install & asset build | `false` |
+| `slug` | Plugin slug | (varies) |
+
+For detailed configuration of each workflow, see the [Workflow Guide](WORKFLOW_GUIDE.md).
 
 ---
 
@@ -123,12 +138,12 @@ jobs:
 These workflows auto-detect tests based on file presence:
 
 | File | Purpose |
-|------|---------|
-| `phpunit.unit.xml` | Enables PHPUnit unit tests |
-| `phpunit.integration.xml` | Enables integration tests |
-| `jest.config.js` | Enables JS tests |
-| `package.json` | Enables npm + Jest |
-| `.zipignore` | Required for build + release ZIPs |
+ |------|---------|
+ | `phpunit.unit.xml` | Enables PHPUnit unit tests |
+ | `phpunit.ci.xml` | Enables integration tests |
+ | `jest.config.js` | Enables JS tests |
+ | `package.json` | Enables npm + Jest |
+ | `.zipignore` | Required for build + release ZIPs |
 
 If a file is missing, the corresponding job is skipped automatically.
 

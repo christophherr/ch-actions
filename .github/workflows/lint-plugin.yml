@@ -17,11 +17,27 @@ on:
         required: false
         type: string
         default: "24"
+      skip-php-lint:
+        description: "Skip PHPCS"
+        required: false
+        type: boolean
+        default: false
+      skip-js-lint:
+        description: "Skip ESLint"
+        required: false
+        type: boolean
+        default: false
+      phpcs-standard:
+        description: "PHPCS standard to use"
+        required: false
+        type: string
+        default: "phpcs.xml"
     secrets: {}
 
 jobs:
   php-lint:
     runs-on: ubuntu-24.04
+    if: inputs.skip-php-lint == false
 
     steps:
       - name: Checkout
@@ -43,10 +59,11 @@ jobs:
         run: composer install --no-progress --no-interaction
 
       - name: Run PHPCS
-        run: vendor/bin/phpcs --standard=phpcs.xml
+        run: vendor/bin/phpcs --standard=${{ inputs.phpcs-standard }}
 
   js-lint:
     runs-on: ubuntu-24.04
+    if: inputs.skip-js-lint == false
 
     steps:
       - name: Checkout
