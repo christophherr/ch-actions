@@ -35,7 +35,7 @@ None
 ```yaml
 jobs:
   build:
-    uses: easilyi-amused/ea-actions/.github/workflows/build-plugin.yml@main
+    uses: easily-amused/ea-actions/.github/workflows/build-plugin.yml@main
     with:
       skip-build: true # Optional: skips npm install and npm run build
 ```
@@ -73,7 +73,7 @@ Full release pipeline:
  ```yaml
  jobs:
    release:
-     uses: easilyi-amused/ea-actions/.github/workflows/release-plugin.yml@main
+     uses: easily-amused/ea-actions/.github/workflows/release-plugin.yml@main
      secrets:
        WP_UPLOADER_USERNAME: ${{ secrets.WP_UPLOADER_USERNAME }}
        WP_UPLOADER_PASSWORD: ${{ secrets.WP_UPLOADER_PASSWORD }}
@@ -106,7 +106,7 @@ Same as `release-plugin.yml`.
 ```yaml
 jobs:
   deploy:
-    uses: easilyi-amused/ea-actions/.github/workflows/wporg-release.yml@main
+    uses: easily-amused/ea-actions/.github/workflows/wporg-release.yml@main
     with:
       slug: my-plugin
     secrets:
@@ -139,7 +139,7 @@ Same as above.
 ```yaml
 jobs:
   readme:
-    uses: easilyi-amused/ea-actions/.github/workflows/wporg-readme.yml@main
+    uses: easily-amused/ea-actions/.github/workflows/wporg-readme.yml@main
     with:
       slug: my-plugin
     secrets:
@@ -201,7 +201,7 @@ None
 ```yaml
 jobs:
   tests:
-    uses: easilyi-amused/ea-actions/.github/workflows/test-plugin.yml@main
+    uses: easily-amused/ea-actions/.github/workflows/test-plugin.yml@main
     with:
       slug: my-plugin
       wp-version: "6.5"
@@ -238,7 +238,7 @@ None
 ```yaml
 jobs:
   lint:
-    uses: easilyi-amused/ea-actions/.github/workflows/lint-plugin.yml@main
+    uses: easily-amused/ea-actions/.github/workflows/lint-plugin.yml@main
     with:
       skip-js-lint: true
 ```

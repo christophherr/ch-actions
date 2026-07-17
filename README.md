@@ -77,7 +77,7 @@ on:
 
 jobs:
   build:
-    uses: easilyi-amused/ea-actions/.github/workflows/build-plugin.yml@main
+    uses: easily-amused/ea-actions/.github/workflows/build-plugin.yml@main
 ```
 
 ### Example: Release workflow
@@ -92,7 +92,7 @@ jobs:
  
  jobs:
    release:
-     uses: easilyi-amused/ea-actions/.github/workflows/release-plugin.yml@main
+     uses: easily-amused/ea-actions/.github/workflows/release-plugin.yml@main
      secrets:
        WP_UPLOADER_USERNAME: ${{ secrets.WP_UPLOADER_USERNAME }}
        WP_UPLOADER_PASSWORD: ${{ secrets.WP_UPLOADER_PASSWORD }}
@@ -113,7 +113,7 @@ on:
 
 jobs:
   tests:
-    uses: easilyi-amused/ea-actions/.github/workflows/test-plugin.yml@main
+    uses: easily-amused/ea-actions/.github/workflows/test-plugin.yml@main
 ```
 
 ---
