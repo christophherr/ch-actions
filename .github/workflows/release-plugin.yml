@@ -50,7 +50,7 @@ jobs:
         run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Cache Composer dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: composer-${{ runner.os }}-${{ inputs.php-version }}
@@ -73,7 +73,7 @@ jobs:
 
       - name: Cache npm
         if: inputs.skip-build == false
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.npm
           key: npm-${{ runner.os }}-${{ inputs.node-version }}
@@ -84,7 +84,7 @@ jobs:
 
       - name: Cache node_modules
         if: inputs.skip-build == false
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-${{ inputs.node-version }}
